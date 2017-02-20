@@ -1,0 +1,4 @@
+{:name "boost-1.63"
+ :depends #{[:cppdev 1.0]}
+ :description "Boost 1.63 Libraries"
+ :creator "Jason Owens <jason.l.owens.civ@mail.mil>"}

@@ -1,0 +1,4 @@
+{:name "ubuntu-mirror"
+ :version 16.04
+ :description "Swaps the standard ubuntu apt repos for automatic mirrors"
+ :creator "Jason Owens <jason.l.owens.civ@mail.mil>"}

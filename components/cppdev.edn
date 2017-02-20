@@ -1,0 +1,5 @@
+{:name "cppdev"
+ :version 1.0
+ :depends #{[:ubuntu-mirror 16.04]}
+ :description "Adds basic development tools, like build-essential, cmake, git, hg, python"
+ :creator "Jason Owens <jason.l.owens.civ@mail.mil>"}
