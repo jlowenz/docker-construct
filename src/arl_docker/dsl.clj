@@ -20,8 +20,8 @@
   [& cmds]
   (str "RUN " (chain-cmd (flatten cmds)) "\n"))
 
-(defn squote [s]
-  (str "\"" s "\""))
+(defn squote [& s]
+  (str "\"" (str/join " " s) "\""))
 
 (defn run-exec
   "Docker RUN exec form; accepts multiple arguments which will be translated thus:

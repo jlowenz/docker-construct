@@ -2,6 +2,21 @@
   (:require [clojure.string :as str]
             [arl-docker.dsl :as dsl]))
 
+(defn pipe [& cmds]
+  (str/join " | " cmds))
+
+(defn echo [& items]
+  (str "echo " (apply dsl/squote items)))
+
+(defn checksum-sha256
+  "Implement an in-image checksum check"
+  [hash fname]
+  (pipe (echo hash fname) (str "sha256sum -c -")))
+
+(defn tar-extract-bz
+  [fname]
+  (str "tar xjf " fname))
+
 (defn hg-latest
   "Run mercurial to get a repository."
   [] nil)
@@ -41,8 +56,8 @@
    "popd" "popd"])
 
 (defn rm
-  [target]
-  (str "rm -rf " target))
+  [& targets]
+  (str "rm -rf " (str/join " " targets)))
 
 (defn chain-multiline
   [items]

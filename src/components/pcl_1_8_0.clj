@@ -1,4 +1,4 @@
-(ns components.pcl
+(ns components.pcl-1-8-0
   (:use arl-docker.dsl
         arl-docker.util))
 
@@ -6,7 +6,7 @@
            :version "1.8.0"
            :depends #{:vtk :boost}})
 
-(def pcl-cwd "/tmp/pcl")
+(def pcl-cwd "/tmp/pcl1.8.0")
 (def pcl-repo "http://github.com/PointCloudLibrary/pcl.git")
 (def pcl-rev "pcl-1.8.0")
 (def pcl-deps ["libeigen3-dev" "libopenni-sensor-primesense0"
