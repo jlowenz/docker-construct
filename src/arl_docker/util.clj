@@ -21,12 +21,20 @@
   "Run mercurial to get a repository."
   [] nil)
 
+(defn add-apt-source
+  "Append or create a new apt source file"
+  ([src file]
+    (add-apt-source src file false))
+  ([src file append]
+   (let [redir (if append ">>" ">")]
+     (str "sh -c 'echo \"" src "\" " redir " /etc/apt/sources.list.d/" file "'"))))
+
 (defn git-latest
   "Run git to get a repository."
-  ([cwd url] 
+  ([cwd url]
    [(str "git clone " url " " cwd)])
   ([cwd url opts]
-   (into (git-latest cwd url) 
+   (into (git-latest cwd url)
          (let [rev (:rev opts)
                branch (:branch opts)]
            (cond rev [(str "pushd " cwd)

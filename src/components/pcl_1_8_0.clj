@@ -6,6 +6,8 @@
            :version "1.8.0"
            :depends #{:vtk :boost}})
 
+;; Could refactor these values into another file (like EDN?) and then import
+;; them...
 (def pcl-cwd "/tmp/pcl1.8.0")
 (def pcl-repo "http://github.com/PointCloudLibrary/pcl.git")
 (def pcl-rev "pcl-1.8.0")
