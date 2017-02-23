@@ -7,7 +7,8 @@
                  [org.clojure/tools.namespace "0.2.11"]
                  [bultitude "0.2.8"] ;; same idea as tools.namespace.find
                  [com.taoensso/timbre "4.3.1"]
-                 [aysylu/loom "1.0.0"]]
+                 [aysylu/loom "1.0.0"]
+                 [me.raynes/fs "1.4.6"]]
   :main ^:skip-aot arl-docker.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

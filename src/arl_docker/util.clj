@@ -21,6 +21,12 @@
   "Run mercurial to get a repository."
   [] nil)
 
+(defn add-ld-path
+  "Create a new ld load path file `ld-fname` with the given contents
+  `path-to-lib`"
+  [path-to-lib ld-fname]
+  (dsl/run (str (echo path-to-lib) " > /etc/ld.so.conf.d/" ld-fname)))
+
 (defn add-apt-source
   "Append or create a new apt source file"
   ([src file]

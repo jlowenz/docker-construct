@@ -3,7 +3,8 @@
         arl-docker.dsl))
 
 (def spec {:name :cppdev
-           :version "1.0"})
+           :version "1.0"
+           :depends #{:mirrors}})
 (def pkgs ["build-essential"
            "cmake"
            "curl"

@@ -4,7 +4,8 @@
 
 (def spec {:name :python
            :description "Ensure python is installed with latest pip"
-           :version "2.7"})
+           :version "2.7"
+           :depends #{:mirrors}})
 
 (def pipurl "https://bootstrap.pypa.io/get-pip.py")
 

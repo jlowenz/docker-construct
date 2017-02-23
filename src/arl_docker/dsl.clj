@@ -34,19 +34,24 @@
 
 (defn cmd
   "Docker CMD instruction. Only one per build (so components are NOT allowed to use it). This is the default *shell* form."
-  [cmd & args])
+  [cmd & args]
+  (str "CMD " (str/join " " (into [cmd] args))))
 
 (defn cmd-exec
   "Docker CMD instruction, exec form."
-  [& cmd-parts])
+  [& cmd-parts]
+  (str "CMD [" (str/join "," (map squote cmd-parts)) "]"))
 
 (defn cmd-args
   "Docker CMD instruction, default arguments to ENTRYPOINT instruction."
-  [& args])
+  [& args]
+  (apply cmd-exec args))
 
 (defn label
   "Docker LABEL instruction, requires a map of key / value pairs to be included in the image."
-  [props])
+  [props]
+  (let [kvp (fn [[k v]] (str k "=" (squote v)))]
+    (str "LABEL " (str/join "\n\t" (map kvp props)))))
 
 (defn expose
   "Docker EXPOSE instruction. Accepts multiple ports."
@@ -59,7 +64,8 @@
 
 (defn add
   "Docker ADD instruction: adds files or directories to the container."
-  [& args])
+  [& args]
+  (str "ADD " (str/join " " args)))
 
 (defn copy
   "Docker COPY instruction: preferred over ADD for simple file and directory copy, where auto-unpack and URL download support is not required."
@@ -75,11 +81,13 @@
 
 (defn user
   "Docker USER instruction: set the username/UID to use for subsequent instructions."
-  [name])
+  [name]
+  (str "USER " name))
 
 (defn workdir
   "Docker WORKDIR instruction: set the working directory."
-  [path])
+  [path]
+  (str "WORKDIR " path))
 
 (defn arg
   "Docker ARG instruction: set a variable for use during build-time. Specify `nil` for no default value."
@@ -99,4 +107,5 @@
 
 (defn shell
   "Docker SHELL instruction: set the default shell for following commands."
-  [executable & params])
+  [executable & params]
+  (str "SHELL [" (str/join ", " (into [(squote executable)] params)) "]"))
