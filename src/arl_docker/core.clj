@@ -44,8 +44,12 @@
     (if (empty? deps)
       coll
       (let [d (first deps)
-            rec-d (:depends (get comps d))
+            d-spec (get comps d)
+            rec-d (:depends d-spec)
             r (rest deps)]
+        (assert d-spec
+                (str "Unknown dependency [" d "]: did you create "
+                     "the component file?"))
         (recur (conj coll d) (into r rec-d))))))
 
 (defn build-to-map [comps dict build-ns]
