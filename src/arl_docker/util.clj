@@ -86,6 +86,6 @@
 
 (defn pip-install
   "Install a collection of python packages using pip"
-  [items]
+  [& items]
   (dsl/run
-    (str "pip install " (str/join " " items)))
+    (str "pip install " (str/join " " (flatten items)))))
