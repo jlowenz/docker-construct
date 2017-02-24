@@ -5,7 +5,8 @@
 
 (def spec {:name :keras
            :version "latest"
-           :depends #{:python}})
+           :description "Provides Keras and Tensorflow installed on a scientific python base"
+           :depends #{:numpy :scipy :sklearn :skimage}})
 
 (defn build []
   (component

@@ -83,3 +83,9 @@
     (str "DEBIAN_FRONTEND=noninteractive apt-get -y update")
     "apt-get -y upgrade"
     (str "apt-get -y install " (chain-multiline items))))
+
+(defn pip-install
+  "Install a collection of python packages using pip"
+  [items]
+  (dsl/run
+    (str "pip install " (str/join " " items)))
