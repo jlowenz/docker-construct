@@ -73,19 +73,22 @@
   [& targets]
   (str "rm -rf " (str/join " " targets)))
 
-(defn chain-multiline
-  [items]
-  (str/join " \\\n\t" items))
+
+
+(defn add-ppa
+  [ppa]
+  (dsl/run "DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common"
+           (str "add-apt-repository -y ppa:" ppa)))
 
 (defn install
-  [items]
+  [& items]
   (dsl/run
     (str "DEBIAN_FRONTEND=noninteractive apt-get -y update")
     "apt-get -y upgrade"
-    (str "apt-get -y install " (chain-multiline items))))
+    (str "apt-get -y install " (dsl/chain-multiline (flatten items)))))
 
 (defn pip-install
   "Install a collection of python packages using pip"
   [& items]
   (dsl/run
-    (str "pip install " (str/join " " (flatten items)))))
+    (str "pip install -U " (dsl/chain-multiline (flatten items)))))

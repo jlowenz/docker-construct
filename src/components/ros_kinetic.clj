@@ -11,9 +11,9 @@
 (defn build []
   (component
     spec
-    (add-apt-source "deb http://packages.ros.org/ros/ubuntu xenial main"
-                    "ros-latest.list")
-    (run (str "apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key " ros-key))
+    (run (add-apt-source "deb http://packages.ros.org/ros/ubuntu xenial main"
+                         "ros-latest.list")
+         (str "apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key " ros-key))
     (install ["ros-kinetic-ros-base"
               "python-rosinstall"])
     (run "rosdep init")

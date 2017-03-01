@@ -7,7 +7,8 @@
             [clojure.java.io :as jio]
             [me.raynes.fs :as fs])
   (:use arl-docker.dsl arl-docker.util)
-  (:gen-class))
+  (:gen-class)
+  (:import (java.io File)))
 
 (defn comp-to-map [dict comp-ns]
   (require comp-ns)
@@ -52,13 +53,21 @@
                      "the component file?"))
         (recur (conj coll d) (into r rec-d))))))
 
+(defn comps-to-files [comps]
+  (or (flatten (filter (comp not nil?) (map :files comps))) []))
+
 (defn build-to-map [comps dict build-ns]
   (require build-ns)
   (let [items (ns-publics build-ns)
         spec (deref (get items 'spec))
         expanded-deps (expand-deps comps (:depends spec))
-        bcomps (select-keys comps expanded-deps)]
-    (assoc dict (:name spec) (assoc spec :graph (comps-to-graph bcomps)))))
+        bcomps (select-keys comps expanded-deps)
+        app-comps (mapv #(get comps %1) (:append-components spec))
+        files (comps-to-files bcomps)
+        afiles (comps-to-files app-comps)]
+    (assoc dict (:name spec) (assoc spec :graph (comps-to-graph bcomps)
+                                         :append-comps app-comps
+                                         :files (flatten [files afiles])))))
 
 (defn load-builds
   "Load the build definitions from the given directory."
@@ -71,20 +80,48 @@
   (str/join "\n" [(str "# Docker Build: " (:name build))
                   (str "# This file is auto-generated using docker-construct")
                   (str "FROM " (:base build))
-                  (label (dissoc build :graph :depends))]))
+                  (label (dissoc build :graph :depends :entrypoint
+                                 :cmd :base :files :append-comps
+                                 :append-components))]))
+
+;(defn convert-entrypoint [comp-specs ep]
+;  (cond (string? ep) (entrypoint-exec ep)
+;        (coll? ep) (entrypoint-exec (first ep) (rest ep))
+;        (keyword? ep) ((:build (ep comp-specs)))))
 
 (defn make-footer [build]
   (let [entrypoint (:entrypoint build)
         cmd (:cmd build)]
     (str/join "\n" (filter (comp not nil?) [entrypoint cmd]))))
 
-(defn wrap-components [comps build]
+(defn wrap-components [comp-str build]
   (let [header (make-header build)
         footer (make-footer build)]
-    (str/join "\n" (flatten [header comps footer]))))
+    (str/join "\n" (flatten [header comp-str footer]))))
+
+(defn default-load []
+  (let [comp-prefix "components"
+        build-prefix "build"
+        cs (load-components comp-prefix)
+        bs (load-builds (:comps cs) build-prefix)]
+    [cs bs]))
+
+(defn file-in-dir [dir file]
+  (File. dir (.getName file)))
+
+(defn copy-files
+  "Copy referenced files from the build to the build-dir"
+  [build build-dir]
+  (let [files (map jio/file (:files build))
+        out-dir (jio/file build-dir)]
+    (doseq [f files]
+      (println "Copying" f)
+      (if (.isDirectory f)
+        (fs/copy-dir f out-dir)
+        (fs/copy f (file-in-dir out-dir f))))))
 
 (defn make-dockerfile [build comps build-dir]
-  (let [comp-order (reverse (alg/topsort (:graph build)))
+  (let [comp-order (into (vec (reverse (alg/topsort (:graph build)))) (mapv :name (:append-comps build)))
         _ (log/debug comp-order)
         comp-strs (mapv #((:build (get comps %1))) comp-order)
         _ (log/debug comp-strs)
@@ -92,7 +129,9 @@
         _ (log/debug full-build)
         dockerfile (fs/file build-dir "Dockerfile")]
     (jio/make-parents dockerfile)
-    (spit dockerfile full-build)))
+    (spit dockerfile full-build)
+    (println "Copying files...")
+    (copy-files build build-dir)))
 
 (defn -main
   "I don't do a whole lot ... yet."
