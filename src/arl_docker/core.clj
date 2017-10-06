@@ -10,6 +10,11 @@
   (:gen-class)
   (:import (java.io File)))
 
+;; Need to handle the :version part of the spec i.e. all specs should be in a dictionary keyed by the version...
+;; so: {:boost {"1.58.0" (boost-1-58-spec)
+;;              "1.63.0" (boost-1-63-spec)}}
+;; etc... of course the question is how to handle the default
+;; pick the highest version???
 (defn comp-to-map [dict comp-ns]
   (require comp-ns)
   (let [items (ns-publics comp-ns)
