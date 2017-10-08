@@ -19,7 +19,9 @@
   (require comp-ns)
   (let [items (ns-publics comp-ns)
         spec (deref (get items 'spec))
-        spec2 (assoc spec :build (get items 'build))]
+        spec2 (assoc spec :build (get items 'build))
+        cname (:name spec)
+        ver (or (:version spec) "1.0")]
     (log/debug "parsing spec:" spec2)
     (log/debug ((:build spec2)))
     (assoc dict (:name spec2) spec2)))
