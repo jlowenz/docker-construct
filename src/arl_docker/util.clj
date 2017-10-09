@@ -4,7 +4,9 @@
             [clojure.java.io :as io]
             [taoensso.timbre :as log]
             [aleph.http :as http]
-            [me.raynes.fs :as fs]))
+            [me.raynes.fs :as fs]
+            [byte-streams :as bs])
+  (:import (java.net BindException)))
 
 (defn pipe [& cmds]
   (str/join " | " cmds))
@@ -121,13 +123,22 @@
 (defn file-handler
   [req]
   (log/debug "file-handler req: " req)
-  (log/debug "file-handler file: " @*local-files*))
+  (log/debug "file-handler file: " @*local-files*)
+  (let [local-path (get @*local-files* (:uri req))]
+    (if local-path
+      (with-open [in (io/input-stream (io/as-file (fs/expand-home local-path)))]
+        {:status 200
+         :headers {"content-type" "application/zip"}
+         :body (bs/to-byte-array in)}))))
 
 (defn serve!
   [local-path url-path]
   (when (not @*server*)
     ;; start up a server
-    (reset! *server* (http/start-server file-handler {:port g-local-port})))
+    (try
+      (reset! *server* (http/start-server file-handler {:port g-local-port}))
+      (catch BindException be
+        (log/warn "Port in service: " g-local-port))))
   (swap! *local-files* assoc url-path local-path))
 
 (defn wget-local
