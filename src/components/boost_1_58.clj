@@ -1,4 +1,6 @@
-(ns components.boost-1-58)
+(ns components.boost-1-58
+  (:use arl-docker.dsl
+        arl-docker.util))
 
 (def spec {:name :boost
            :version "1.58.0"

@@ -3,7 +3,8 @@
         arl-docker.util))
 
 (def spec {:name :java
-           :version "8"})
+           :version "8"
+           :depends #{:mirrors}})
 
 (def ppa "webupd8team/java")
 ;(def keyid "7B2C3B0889BF5709A105D03AC2518248EEA14886")

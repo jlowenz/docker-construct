@@ -1,6 +1,10 @@
 (ns arl-docker.util
   (:require [clojure.string :as str]
-            [arl-docker.dsl :as dsl]))
+            [arl-docker.dsl :as dsl]
+            [clojure.java.io :as io]
+            [taoensso.timbre :as log]
+            [aleph.http :as http]
+            [me.raynes.fs :as fs]))
 
 (defn pipe [& cmds]
   (str/join " | " cmds))
@@ -16,6 +20,10 @@
 (defn tar-extract-bz
   [fname]
   (str "tar xjf " fname))
+
+(defn unzip
+  [out fname]
+  (str "unzip -d " out " " fname))
 
 (defn hg-latest
   "Run mercurial to get a repository."
@@ -92,3 +100,36 @@
   [& items]
   (dsl/run
     (str "pip install -U " (dsl/chain-multiline (flatten items)))))
+
+(defn download-locally!
+  "Download a URL locally, in order to mount it later. Do not download
+  if the file already exists"
+  [url target-path]
+  (let [target-file (io/as-file (fs/expand-home target-path))]
+    (when (not (.exists target-file))
+      (log/info "!!!!! Downloading as local file: " url)
+      (with-open [in (io/input-stream (io/as-url url))
+                  out (io/output-stream target-file)]
+        (io/copy in out)))))
+
+(def g-local-port 8989)
+(def g-host "localhost")
+(def g-local-server (str "http://" g-host ":" g-local-port))
+(def ^:dynamic *server* (atom nil))
+(def ^:dynamic *local-files* (atom {}))
+
+(defn file-handler
+  [req]
+  (log/debug "file-handler req: " req)
+  (log/debug "file-handler file: " @*local-files*))
+
+(defn serve!
+  [local-path url-path]
+  (when (not @*server*)
+    ;; start up a server
+    (reset! *server* (http/start-server file-handler {:port g-local-port})))
+  (swap! *local-files* assoc url-path local-path))
+
+(defn wget-local
+  [local-path]
+  (str "wget " g-local-server local-path))
