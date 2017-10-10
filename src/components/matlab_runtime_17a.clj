@@ -27,3 +27,6 @@
      (str "./install -mode silent -agreeToLicense yes ")
      "popd"
      (rm zipfile cwd))))
+
+(defn shutdown! []
+  (kill-server!))

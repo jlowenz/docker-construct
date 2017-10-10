@@ -83,8 +83,6 @@
   [& targets]
   (str "rm -rf " (str/join " " targets)))
 
-
-
 (defn add-ppa
   [ppa]
   (dsl/run "DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common"
@@ -140,6 +138,14 @@
       (catch BindException be
         (log/warn "Port in service: " g-local-port))))
   (swap! *local-files* assoc url-path local-path))
+
+(defn kill-server! []
+  (when @*server*
+    (try
+      (.close @*server*)
+      (reset! *server* nil)
+      (catch Throwable t
+        (log/warn "Problem shutting down server: " (str t))))))
 
 (defn wget-local
   [local-path]

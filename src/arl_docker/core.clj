@@ -21,22 +21,26 @@
 ;;              "1.63.0" (boost-1-63-spec)}}
 ;; etc... of course the question is how to handle the default
 ;; pick the highest version???
-(defn comp-to-map [dict comp-ns]
+(defn comp-to-map [[sys dict] comp-ns]
   (require comp-ns)
   (let [items (ns-publics comp-ns)
         spec (deref (get items 'spec))
         spec2 (assoc spec :build (get items 'build))
         init-fn (get items 'init!)
+        shut-fn (get items 'shutdown!)
         cname (:name spec)
-        ver (or (:version spec) "0.0.1")       
+        ver (or (:version spec) "0.0.1")
+        existing-inits (or (get sys :inits) [])
+        existing-shutdowns (or (get sys :shutdowns) [])
         existing-versions (or (get dict cname)
                               (sorted-map-by
                                (fn [a b] (>= (compare (ver-to-string a)
                                                       (ver-to-string b)) 1))))]
     (log/debug "parsing spec:" spec2)
     (log/debug ((:build spec2)))
-    (when init-fn (init-fn)) ;; call the init function if it exists
-    (assoc dict cname (assoc existing-versions ver spec2))))
+    [(assoc sys :inits (if init-fn (assoc existing-inits init-fn) existing-inits)
+            :shutdowns (if shut-fn (assoc existing-shutdowns shut-fn) existing-shutdowns))     
+     (assoc dict cname (assoc existing-versions ver spec2))]))
 
 (defn to-adjacency [m [k v]]
   "Convert the components graph into an adjacency list. Need to
@@ -73,9 +77,10 @@
     ;; Load the specification for each namespace, and build two
     ;; data structures: a map from names/keywords to specs, and a
     ;; dependency graph.
-    (let [comps (reduce comp-to-map {} comp-ns)
+    (let [[sys comps] (reduce comp-to-map [{} {}] comp-ns)
           comp-graph (comps-to-graph comps)]
-      {:comps comps
+      {:sys sys
+       :comps comps
        :graph comp-graph})))
 
 (defn get-depends [vspec] (-> (vals vspec) first :depends))
