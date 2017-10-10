@@ -38,8 +38,8 @@
                                                       (ver-to-string b)) 1))))]
     (log/debug "parsing spec:" spec2)
     (log/debug ((:build spec2)))
-    [(assoc sys :inits (if init-fn (assoc existing-inits init-fn) existing-inits)
-            :shutdowns (if shut-fn (assoc existing-shutdowns shut-fn) existing-shutdowns))     
+    [(assoc sys :inits (if init-fn (conj existing-inits init-fn) existing-inits)
+            :shutdowns (if shut-fn (conj existing-shutdowns shut-fn) existing-shutdowns))     
      (assoc dict cname (assoc existing-versions ver spec2))]))
 
 (defn to-adjacency [m [k v]]
@@ -201,6 +201,54 @@
     (spit dockerfile full-build)
     (println "Copying files...")
     (copy-files build build-dir)))
+
+;; ONLY one system exists!
+(def system (atom nil))
+(defn system-start!
+  []
+  (let [[cs bs] (default-load)
+        sys (:sys cs)
+        comps (:comps cs)
+        graph (:graph cs)
+        inits (:inits sys)]
+    ;; execute the initializers for the components
+    (log/info "Starting docker-construct system")
+    (doseq [init-fn inits] (init-fn))
+    (reset! system (assoc sys
+                          :comps comps
+                          :graph graph
+                          :builds bs))))
+
+(defn system-stop!
+  []
+  (when @system
+    (let [shutdowns (:shutdowns @system)]
+      (log/info "Shutting down docker-construct system")
+      (doseq [shutdown-fn shutdowns] (shutdown-fn)))
+    (reset! system nil)))
+
+(defn components
+  "List the components available"
+  []
+  (when @system
+    (doseq [c (keys (:comps @system))] (println c))))
+
+(defn builds
+  "List the builds available"
+  []
+  (when @system
+    (doseq [b (keys (:builds @system))] (println b))))
+
+(defn generate-dockerfile
+  "Generate the Dockerfile"
+  [build-name out-dir]
+  (when @system
+    (let [bld (get (:builds @system) build-name)
+          comps (:comps @system)]
+      (make-dockerfile bld comps (fs/expand-home out-dir)))))
+
+(defn docker-build
+  [])
 
 (defn -main
   [& args]

@@ -16,5 +16,4 @@
          (str "apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key " ros-key))
     (install ["ros-kinetic-ros-base"
               "python-rosinstall"])
-    (run "rosdep init")
-    (run (str (echo "source /opt/ros/kinetic/setup.bash") " >> /etc/bash.bashrc"))))
+    (run "rosdep init")))

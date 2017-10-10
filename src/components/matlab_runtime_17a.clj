@@ -8,10 +8,10 @@
 
 (def url "http://ssd.mathworks.com/supportfiles/downloads/R2017a/deployment_files/R2017a/installers/glnxa64/MCR_R2017a_glnxa64_installer.zip")
 (def fname "MCR_R2017a_glnxa64_installer")
-(def zipfile "~/Downloads/mcr.zip")
+(def zipfile "matlab-runtime-17a")
 (def cwd "mlinst")
 (def local-path "~/Downloads/mcr.zip")
-(def url-path "/matlab-runtime-17a")
+(def url-path (str "/" zipfile))
 
 (defn init! []
   (download-locally! url local-path)
