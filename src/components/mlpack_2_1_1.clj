@@ -3,7 +3,7 @@
 
 (def spec {:name :mlpack
            :version "2.1.1"
-           :depends #{:openblas}})
+           :depends #{:openblas :boost}})
 
 (defn build []
   (let [repo "https://github.com/mlpack/mlpack.git"
@@ -12,6 +12,8 @@
     (component
       spec
       (workdir "/tmp")
-      (run (git-latest repo {:rev rev})
+      (install "libarmadillo-dev")
+
+      (run (git-latest src repo {:rev rev})
            (cmake src {"CMAKE_INSTALL_PREFIX" "/usr/local"})
            (rm src)))))

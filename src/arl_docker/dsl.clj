@@ -1,7 +1,11 @@
 (ns arl-docker.dsl
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.java.io :as jio]))
 
 ;; There is no FROM... (like there is no spoon)
+(defn chain-multiline
+  [items]
+  (str/join " \\\n\t" items))
 
 (defn component
   [spec & steps]
@@ -51,21 +55,31 @@
   "Docker LABEL instruction, requires a map of key / value pairs to be included in the image."
   [props]
   (let [kvp (fn [[k v]] (str k "=" (squote v)))]
-    (str "LABEL " (str/join "\n\t" (map kvp props)))))
+    (str "LABEL " (str/join "\\\n\t" (map kvp props)))))
 
 (defn expose
   "Docker EXPOSE instruction. Accepts multiple ports."
   [& ports])
 
+(defn to-env [[k v]]
+  (str k "=" v))
+
 (defn env
   "Docker ENV instruction; requires a map of key / value pairs"
   [envs]
-  (str "ENV"))
+  (str "ENV " (chain-multiline (map to-env envs))))
+
+(defn to-add-pairs [args]
+  (loop [[from to & rest] args
+         out-strs []]
+    (if from (let [fname (-> from jio/file .getName)]
+               (recur rest (conj out-strs (str fname " " to))))
+             out-strs)))
 
 (defn add
   "Docker ADD instruction: adds files or directories to the container."
   [& args]
-  (str "ADD " (str/join " " args)))
+  (str "ADD " (chain-multiline (to-add-pairs args))))
 
 (defn copy
   "Docker COPY instruction: preferred over ADD for simple file and directory copy, where auto-unpack and URL download support is not required."
@@ -73,7 +87,8 @@
 
 (defn entrypoint-exec
   "Docker ENTRYPOINT instruction: configure a container to run as an executable. This function represents the exec form (preferred)."
-  [executable & args])
+  [executable & args]
+  (str "ENTRYPOINT [" (str/join "," (map squote (into [executable] args))) "]"))
 
 (defn volume
   "Docker VOLUME instruction: creates a mount point with the specified name and marks is as holding externally mounted volumes from host or other containers."
@@ -108,4 +123,4 @@
 (defn shell
   "Docker SHELL instruction: set the default shell for following commands."
   [executable & params]
-  (str "SHELL [" (str/join ", " (into [(squote executable)] params)) "]"))
+  (str "SHELL [" (str/join ", " (into [(squote executable)] (map squote params))) "]"))

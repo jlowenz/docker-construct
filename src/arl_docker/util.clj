@@ -1,6 +1,12 @@
 (ns arl-docker.util
   (:require [clojure.string :as str]
-            [arl-docker.dsl :as dsl]))
+            [arl-docker.dsl :as dsl]
+            [clojure.java.io :as io]
+            [taoensso.timbre :as log]
+            [aleph.http :as http]
+            [me.raynes.fs :as fs]
+            [byte-streams :as bs])
+  (:import (java.net BindException)))
 
 (defn pipe [& cmds]
   (str/join " | " cmds))
@@ -16,6 +22,10 @@
 (defn tar-extract-bz
   [fname]
   (str "tar xjf " fname))
+
+(defn unzip
+  [out fname]
+  (str "unzip -d " out " " fname))
 
 (defn hg-latest
   "Run mercurial to get a repository."
@@ -73,13 +83,70 @@
   [& targets]
   (str "rm -rf " (str/join " " targets)))
 
-(defn chain-multiline
-  [items]
-  (str/join " \\\n\t" items))
+(defn add-ppa
+  [ppa]
+  (dsl/run "DEBIAN_FRONTEND=noninteractive apt-get -y install software-properties-common"
+           (str "add-apt-repository -y ppa:" ppa)))
 
 (defn install
-  [items]
+  [& items]
   (dsl/run
     (str "DEBIAN_FRONTEND=noninteractive apt-get -y update")
     "apt-get -y upgrade"
-    (str "apt-get -y install " (chain-multiline items))))
+    (str "apt-get -y install " (dsl/chain-multiline (flatten items)))))
+
+(defn pip-install
+  "Install a collection of python packages using pip"
+  [& items]
+  (dsl/run
+    (str "pip install -U " (dsl/chain-multiline (flatten items)))))
+
+(defn download-locally!
+  "Download a URL locally, in order to mount it later. Do not download
+  if the file already exists"
+  [url target-path]
+  (let [target-file (io/as-file (fs/expand-home target-path))]
+    (when (not (.exists target-file))
+      (log/info "!!!!! Downloading as local file: " url)
+      (with-open [in (io/input-stream (io/as-url url))
+                  out (io/output-stream target-file)]
+        (io/copy in out)))))
+
+(def g-local-port 8989)
+(def g-host "localhost")
+(def g-local-server (str "http://" g-host ":" g-local-port))
+(def ^:dynamic *server* (atom nil))
+(def ^:dynamic *local-files* (atom {}))
+
+(defn file-handler
+  [req]
+  (log/debug "file-handler req: " req)
+  (log/debug "file-handler file: " @*local-files*)
+  (let [local-path (get @*local-files* (:uri req))]
+    (if local-path
+      (with-open [in (io/input-stream (io/as-file (fs/expand-home local-path)))]
+        {:status 200
+         :headers {"content-type" "application/zip"}
+         :body (bs/to-byte-array in)}))))
+
+(defn serve!
+  [local-path url-path]
+  (when (not @*server*)
+    ;; start up a server
+    (try
+      (reset! *server* (http/start-server file-handler {:port g-local-port}))
+      (catch BindException be
+        (log/warn "Port in service: " g-local-port))))
+  (swap! *local-files* assoc url-path local-path))
+
+(defn kill-server! []
+  (when @*server*
+    (try
+      (.close @*server*)
+      (reset! *server* nil)
+      (catch Throwable t
+        (log/warn "Problem shutting down server: " (str t))))))
+
+(defn wget-local
+  [local-path]
+  (str "wget " g-local-server local-path))

@@ -4,7 +4,7 @@
 
 (def spec {:name :vtk
            :version "7.1.0"
-           :depends #{:boost :python :java}})
+           :depends #{:opengl :boost :python :java}})
 
 (def cwd "/tmp/vtk7.1.0")
 (def repo "https://github.com/Kitware/VTK")
@@ -13,6 +13,7 @@
 (defn build []
   (component
    spec
+   (install "doxygen")
    (run
      (git-latest cwd repo {:rev rev})
      (cmake cwd {"CMAKE_BUILD_TYPE" "RelWithDebInfo"
